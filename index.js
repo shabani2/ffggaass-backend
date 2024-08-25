@@ -16,6 +16,14 @@ import stockRoute from './Routes/stockRoute.js';
 import cors from 'cors'
 import userRoute from './Routes/UserRoute.js';
 import fileRouter from './Routes/fileManagementRoute.js';
+import ClientRouter from './Routes/clientRoute.js';
+import commandeRouter from './Routes/commandeRoute.js';
+import venteRouter from './Routes/venteRoute.js';
+import livraisonRouter from './Routes/livraisonRoute.js';
+import rvsLivraisonRoute from './Routes/routeSituationLivraison.js';
+import rvsVenteRoute from './Routes/routeSituationVente.js';
+import groupBy from './Routes/aggregateOldRoute.js';
+
 
 dotenv.config();
 const app = express();
@@ -71,6 +79,16 @@ app.use('/api/ffggaass/produit',ProduitRoute)
 app.use('/api/ffggaass/seuil',seuilRoute)
 app.use('/api/ffggaass/stock',stockRoute)
 app.use('/api/ffggaass/user',userRoute)
+app.use('/api/ffggaass/clients',ClientRouter)
+app.use('/api/ffggaass/commande',commandeRouter)
+app.use('/api/ffggaass/vente',venteRouter)
+app.use('/api/ffggaass/livraison',livraisonRouter)
+
+app.use('/api/ffggaass/stockLivraison',rvsLivraisonRoute)
+app.use('/api/ffggaass/stockVente',rvsVenteRoute)
+app.use('/api/ffggaass/groupby',groupBy)
+
+
 //route pour exportation to excel
 app.use('/api/ffggaass/file',fileRouter)
 

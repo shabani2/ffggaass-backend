@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "server": "nodemon index.js",
+     "cron": "node cron.js",
+     "conVente" : "mode cronVente.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "SHABANI BERNARD",
@@ -24,6 +26,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.5.1",
     "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

@@ -20,11 +20,12 @@ export const register = expressAsyncHandler(async (req,res)=>{
       numero,
       password,
       role,
+      pointVenteId
     };
 
-    if (role === 'Vendeur') {
-      userData.pointVente = pointVenteId;
-    }
+    // if (role === 'Vendeur') {
+    //   userData.pointVente = pointVenteId;
+    // }
 
     const newUser = new User(userData);
     await newUser.save();
