@@ -6,8 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "server": "nodemon index.js",
-     "cron": "node cron.js",
-     "conVente" : "mode cronVente.js",
+    
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "SHABANI BERNARD",

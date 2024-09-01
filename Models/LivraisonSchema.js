@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import StockVariation from './stockVariationSchema.js';
 
 const { Schema } = mongoose;
 
@@ -33,6 +34,26 @@ const livraisonSchema = new Schema(
   { timestamps: true }
 );
 
+
+livraisonSchema.post('save', async function (doc) {
+  let stockVariation = await StockVariation.findOne({ 
+    produit: doc.produit, 
+    pointVente: doc.pointVente 
+  });
+
+  if (stockVariation) {
+    stockVariation.quantiteLivre += doc.quantite;
+  } else {
+    stockVariation = await StockVariation.create({
+      produit: doc.produit,
+      pointVente: doc.pointVente,
+      quantiteLivre: doc.quantite,
+      quantiteVendu: 0,
+    });
+  }
+
+  await stockVariation.save();
+});
 // Création du modèle pour MvtStock
 const Livraison = mongoose.model('Livraison', livraisonSchema);
 
