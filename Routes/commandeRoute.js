@@ -14,17 +14,21 @@ commandeRouter.post('/', async (req, res) => {
   }
 });
 
-// Obtenir toutes les commandes
+// Obtenir toutes les commandes (triées par createdAt en ordre décroissant)
 commandeRouter.get('/', async (req, res) => {
   try {
-    const commandes = await Commande.find().populate('produit').populate('client');
+    const commandes = await Commande.find()
+      .populate('produit')
+      .populate('client')
+      .sort({ createdAt: -1 }); // Tri par createdAt en ordre décroissant
+
     res.status(200).json(commandes);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// Rechercher des commandes par produit.nom
+// Rechercher des commandes par produit.nom (avec tri par createdAt en ordre décroissant)
 commandeRouter.get('/search-by-produit', async (req, res) => {
   try {
     const { produitQuery } = req.query;
@@ -34,7 +38,8 @@ commandeRouter.get('/search-by-produit', async (req, res) => {
         path: 'produit',
         match: produitQuery ? { nom: { $regex: produitQuery, $options: 'i' } } : {},
       })
-      .populate('client');
+      .populate('client')
+      .sort({ createdAt: -1 }); // Tri par createdAt en ordre décroissant
 
     // Filtrer les commandes où le produit est trouvé
     const filteredCommandes = commandes.filter(commande => commande.produit);
@@ -45,7 +50,7 @@ commandeRouter.get('/search-by-produit', async (req, res) => {
   }
 });
 
-// Rechercher des commandes par client.nom/postnom/prenom/adresse
+// Rechercher des commandes par client.nom/postnom/prenom/adresse (avec tri par createdAt en ordre décroissant)
 commandeRouter.get('/search-by-client', async (req, res) => {
   try {
     const { clientQuery } = req.query;
@@ -64,7 +69,8 @@ commandeRouter.get('/search-by-client', async (req, res) => {
               ],
             }
           : {},
-      });
+      })
+      .sort({ createdAt: -1 }); // Tri par createdAt en ordre décroissant
 
     // Filtrer les commandes où le client est trouvé
     const filteredCommandes = commandes.filter(commande => commande.client);
@@ -114,6 +120,32 @@ commandeRouter.delete('/:id', async (req, res) => {
     res.status(200).json({ message: 'Commande supprimée avec succès' });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+});
+
+// Mise à jour du statut d'une commande par ID
+commandeRouter.put('/statut/:id/:statut', async (req, res) => {
+  try {
+    const { id, statut } = req.params; // Récupération des paramètres de l'URL
+
+    if (!statut) {
+      return res.status(400).json({ message: 'Le statut est requis.' });
+    }
+
+    // Mise à jour de la commande avec le nouveau statut
+    const updatedCommande = await Commande.findByIdAndUpdate(
+      id,
+      { statut },
+      { new: true, runValidators: true }
+    ).populate('produit').populate('client');
+
+    if (!updatedCommande) {
+      return res.status(404).json({ message: 'Commande non trouvée' });
+    }
+
+    res.status(200).json(updatedCommande);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 });
 

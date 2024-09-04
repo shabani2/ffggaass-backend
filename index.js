@@ -20,6 +20,9 @@ import ClientRouter from './Routes/clientRoute.js';
 import commandeRouter from './Routes/commandeRoute.js';
 import venteRouter from './Routes/venteRoute.js';
 import livraisonRouter from './Routes/livraisonRoute.js';
+import variationRouter from './Routes/stockVariationRoute.js';
+import bonEntreRouter from './Routes/bonEntreRoute.js';
+import stockLocalRouter from './Routes/stockLocalRoute.js';
 
 
 
@@ -82,6 +85,9 @@ app.use('/api/ffggaass/clients',ClientRouter)
 app.use('/api/ffggaass/commande',commandeRouter)
 app.use('/api/ffggaass/vente',venteRouter)
 app.use('/api/ffggaass/livraison',livraisonRouter)
+app.use('/api/ffggaass/stockVariations',variationRouter)
+app.use('/api/ffggaass/bonEntre',bonEntreRouter)
+app.use('/api/ffggaass/stockLocal',stockLocalRouter)
 
 
 

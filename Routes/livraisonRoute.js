@@ -14,17 +14,20 @@ livraisonRouter.post('/', async (req, res) => {
   }
 });
 
-// Obtenir toutes les livraisons
+// Obtenir toutes les livraisons (triées par createdAt en ordre décroissant)
 livraisonRouter.get('/', async (req, res) => {
   try {
-    const livraisons = await Livraison.find().populate('produit').populate('pointVente');
+    const livraisons = await Livraison.find()
+      .populate('produit')
+      .populate('pointVente')
+      .sort({ createdAt: -1 }); // Tri en ordre décroissant par createdAt
     res.status(200).json(livraisons);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// Rechercher des livraisons par produit.nom
+// Rechercher des livraisons par produit.nom (triées par createdAt en ordre décroissant)
 livraisonRouter.get('/search-by-produit', async (req, res) => {
   try {
     const { produitQuery } = req.query;
@@ -34,9 +37,9 @@ livraisonRouter.get('/search-by-produit', async (req, res) => {
         path: 'produit',
         match: produitQuery ? { nom: { $regex: produitQuery, $options: 'i' } } : {},
       })
-      .populate('pointVente');
+      .populate('pointVente')
+      .sort({ createdAt: -1 }); // Tri en ordre décroissant par createdAt
 
-    // Filtrer les livraisons où le produit est trouvé
     const filteredLivraisons = livraisons.filter(livraison => livraison.produit);
 
     res.status(200).json(filteredLivraisons);
@@ -45,7 +48,7 @@ livraisonRouter.get('/search-by-produit', async (req, res) => {
   }
 });
 
-// Rechercher des livraisons par pointVente.nom
+// Rechercher des livraisons par pointVente.nom (triées par createdAt en ordre décroissant)
 livraisonRouter.get('/search-by-pointVente', async (req, res) => {
   try {
     const { pointVenteQuery } = req.query;
@@ -55,9 +58,9 @@ livraisonRouter.get('/search-by-pointVente', async (req, res) => {
       .populate({
         path: 'pointVente',
         match: pointVenteQuery ? { nom: { $regex: pointVenteQuery, $options: 'i' } } : {},
-      });
+      })
+      .sort({ createdAt: -1 }); // Tri en ordre décroissant par createdAt
 
-    // Filtrer les livraisons où le point de vente est trouvé
     const filteredLivraisons = livraisons.filter(livraison => livraison.pointVente);
 
     res.status(200).json(filteredLivraisons);
@@ -66,10 +69,60 @@ livraisonRouter.get('/search-by-pointVente', async (req, res) => {
   }
 });
 
+// Exclure les livraisons par pointVente.nom (triées par createdAt en ordre décroissant)
+livraisonRouter.get('/exclude-by-pointVente', async (req, res) => {
+  try {
+    const { pointVenteQuery } = req.query;
+
+    const livraisons = await Livraison.find()
+      .populate('produit')
+      .populate({
+        path: 'pointVente',
+        match: pointVenteQuery ? { nom: { $not: { $regex: pointVenteQuery, $options: 'i' } } } : {},
+      })
+      .sort({ createdAt: -1 }); // Tri en ordre décroissant par createdAt
+
+    const filteredLivraisons = livraisons.filter(livraison => livraison.pointVente);
+
+    res.status(200).json(filteredLivraisons);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Mettre à jour le statut d'une livraison par ID
+livraisonRouter.put('/statut/:id/:statut', async (req, res) => {
+  try {
+    const { id, statut } = req.params;
+
+    if (!statut) {
+      return res.status(400).json({ message: 'Le statut est requis.' });
+    }
+
+    const updatedLivraison = await Livraison.findByIdAndUpdate(
+      id,
+      { statut },
+      { new: true, runValidators: true }
+    )
+      .populate('produit')
+      .populate('pointVente');
+
+    if (!updatedLivraison) {
+      return res.status(404).json({ message: 'Livraison non trouvée' });
+    }
+
+    res.status(200).json(updatedLivraison);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // Obtenir une livraison par ID
 livraisonRouter.get('/:id', async (req, res) => {
   try {
-    const livraison = await Livraison.findById(req.params.id).populate('produit').populate('pointVente');
+    const livraison = await Livraison.findById(req.params.id)
+      .populate('produit')
+      .populate('pointVente');
     if (!livraison) {
       return res.status(404).json({ message: 'Livraison non trouvée' });
     }
@@ -85,7 +138,9 @@ livraisonRouter.put('/:id', async (req, res) => {
     const updatedLivraison = await Livraison.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
-    }).populate('produit').populate('pointVente');
+    })
+      .populate('produit')
+      .populate('pointVente');
     if (!updatedLivraison) {
       return res.status(404).json({ message: 'Livraison non trouvée' });
     }
@@ -108,7 +163,7 @@ livraisonRouter.delete('/:id', async (req, res) => {
   }
 });
 
-
+// Grouped Livraisons avec tri par date décroissant
 livraisonRouter.get('/grouped-livraisons', async (req, res) => {
   try {
     const { pointVente, produit, dateStart, dateEnd } = req.query;
@@ -117,13 +172,11 @@ livraisonRouter.get('/grouped-livraisons', async (req, res) => {
       return res.status(400).json({ message: "Les paramètres 'pointVente' et 'produit' sont requis." });
     }
 
-    // Construction de la condition de filtrage
     let matchCondition = {
       pointVente: mongoose.Types.ObjectId(pointVente),
       produit: mongoose.Types.ObjectId(produit),
     };
 
-    // Ajout de la condition de date si fournie
     if (dateStart || dateEnd) {
       matchCondition.createdAt = {};
       if (dateStart) {
@@ -134,7 +187,6 @@ livraisonRouter.get('/grouped-livraisons', async (req, res) => {
       }
     }
 
-    // Pipeline d'agrégation
     const result = await Livraison.aggregate([
       { $match: matchCondition },
       {
@@ -168,7 +220,7 @@ livraisonRouter.get('/grouped-livraisons', async (req, res) => {
         }
       },
       {
-        $sort: { "_id.date": 1 }
+        $sort: { "_id.date": -1 } // Tri par date en ordre décroissant
       }
     ]);
 

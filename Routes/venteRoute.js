@@ -14,17 +14,21 @@ venteRouter.post('/', async (req, res) => {
   }
 });
 
-// Obtenir toutes les ventes
+// Obtenir toutes les ventes (triées par createdAt en ordre décroissant)
 venteRouter.get('/', async (req, res) => {
   try {
-    const ventes = await Vente.find().populate('produit').populate('pointVente');
+    const ventes = await Vente.find()
+      .populate('produit')
+      .populate('pointVente')
+      .sort({ createdAt: -1 }); // Tri par createdAt en ordre décroissant
+
     res.status(200).json(ventes);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// Rechercher des ventes par produit.nom
+// Rechercher des ventes par produit.nom (avec tri par createdAt en ordre décroissant)
 venteRouter.get('/search-by-produit', async (req, res) => {
   try {
     const { produitQuery } = req.query;
@@ -34,7 +38,8 @@ venteRouter.get('/search-by-produit', async (req, res) => {
         path: 'produit',
         match: produitQuery ? { nom: { $regex: produitQuery, $options: 'i' } } : {},
       })
-      .populate('pointVente');
+      .populate('pointVente')
+      .sort({ createdAt: -1 }); // Tri par createdAt en ordre décroissant
 
     // Filtrer les ventes où le produit est trouvé
     const filteredVentes = ventes.filter(vente => vente.produit);
@@ -45,7 +50,7 @@ venteRouter.get('/search-by-produit', async (req, res) => {
   }
 });
 
-// Rechercher des ventes par pointVente.nom
+// Rechercher des ventes par pointVente.nom (avec tri par createdAt en ordre décroissant)
 venteRouter.get('/search-by-pointVente', async (req, res) => {
   try {
     const { pointVenteQuery } = req.query;
@@ -55,7 +60,8 @@ venteRouter.get('/search-by-pointVente', async (req, res) => {
       .populate({
         path: 'pointVente',
         match: pointVenteQuery ? { nom: { $regex: pointVenteQuery, $options: 'i' } } : {},
-      });
+      })
+      .sort({ createdAt: -1 }); // Tri par createdAt en ordre décroissant
 
     // Filtrer les ventes où le point de vente est trouvé
     const filteredVentes = ventes.filter(vente => vente.pointVente);
@@ -108,7 +114,7 @@ venteRouter.delete('/:id', async (req, res) => {
   }
 });
 
-
+// Agrégation des ventes groupées avec tri
 venteRouter.get('/grouped-vente', async (req, res) => {
   try {
     const { pointVente, produit, dateStart, dateEnd } = req.query;
@@ -148,7 +154,7 @@ venteRouter.get('/grouped-vente', async (req, res) => {
           },
           totalQuantite: { $sum: "$quantite" },
           totalMontant: { $sum: "$montant" },
-          livraisons: { $push: "$$ROOT" }
+          ventes: { $push: "$$ROOT" }
         }
       },
       {
@@ -168,7 +174,7 @@ venteRouter.get('/grouped-vente', async (req, res) => {
         }
       },
       {
-        $sort: { "_id.date": 1 }
+        $sort: { "_id.date": 1 } // Tri par date croissant dans l'agrégation
       }
     ]);
 
@@ -179,5 +185,4 @@ venteRouter.get('/grouped-vente', async (req, res) => {
   }
 });
 
-
-export default venteRouter ;
+export default venteRouter;

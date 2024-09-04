@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import StockVariation from './stockVariationSchema.js';
+import StockLocal from './stockLocalSchema.js'
 
 const { Schema } = mongoose;
 
@@ -33,6 +34,25 @@ const livraisonSchema = new Schema(
   },
   { timestamps: true }
 );
+
+livraisonSchema.pre('save', async function (next) {
+  // Vérification de la quantité disponible dans StockLocal
+  let stocklocal = await StockLocal.findOne({ produit: this.produit });
+
+  if (!stocklocal) {
+    return next(new Error("Stock local inexistant pour ce produit."));
+  }
+
+  if (stocklocal.quantiteTotale < this.quantite) {
+    return next(new Error("Quantité insuffisante dans le stock local."));
+  }
+
+  // Si la quantité est suffisante, soustraction de la quantité de la livraison
+  stocklocal.quantiteTotale -= this.quantite;
+  await stocklocal.save();
+
+  next();
+});
 
 
 livraisonSchema.post('save', async function (doc) {
