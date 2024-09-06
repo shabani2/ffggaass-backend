@@ -23,6 +23,7 @@ import livraisonRouter from './Routes/livraisonRoute.js';
 import variationRouter from './Routes/stockVariationRoute.js';
 import bonEntreRouter from './Routes/bonEntreRoute.js';
 import stockLocalRouter from './Routes/stockLocalRoute.js';
+import pdfGeneratorRouter from './Routes/PdfGeneratorRoute.js';
 
 
 
@@ -88,8 +89,7 @@ app.use('/api/ffggaass/livraison',livraisonRouter)
 app.use('/api/ffggaass/stockVariations',variationRouter)
 app.use('/api/ffggaass/bonEntre',bonEntreRouter)
 app.use('/api/ffggaass/stockLocal',stockLocalRouter)
-
-
+app.use('/api/ffggaass/print',pdfGeneratorRouter)
 
 
 

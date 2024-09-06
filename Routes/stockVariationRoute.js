@@ -41,6 +41,33 @@ variationRouter.get('/pointVente/:pointVenteId/:produitId', async (req, res) => 
   }
 });
 
+
+// Route pour obtenir le solde d'un produit dans un point de vente spécifique
+variationRouter.get('/pointVente/:pointVenteId/:produitId/solde', async (req, res) => {
+  const { pointVenteId, produitId } = req.params;
+
+  try {
+    // Trouver la variation de stock spécifique
+    const variation = await StockVariation.findOne({
+      pointVente: pointVenteId,
+      produit: produitId
+    }).select('solde'); // Sélectionner uniquement la propriété "solde"
+
+    // Vérifier si la variation existe
+    if (!variation) {
+      return res.status(404).json({ message: 'Aucune variation de stock trouvée pour ce point de vente et produit.' });
+    }
+
+    // Retourner la valeur du solde
+    res.status(200).json({ solde: variation.solde });
+  } catch (error) {
+    // Gérer les erreurs
+    res.status(500).json({ message: 'Erreur lors de la récupération du solde', error });
+  }
+});
+
+
+
 export default variationRouter;
 
 
