@@ -97,6 +97,8 @@ app.use('/api/ffggaass/print',pdfGeneratorRouter)
 app.use('/api/ffggaass/file',fileRouter)
 
 
+
+
 //app.use('/crud-api/users',userRoute);
 app.get('/', async (req, res) => {
    try{
@@ -130,3 +132,4 @@ app.get('/', async (req, res) => {
  //listen toserver
  const Port = process.env.PORT || 9091
 app.listen(Port,console.log(`server is running on port ${Port}`))
+//app.listen(Port,console.log('connection var = '+ process.env.MONGODB_URL_ONLINE))
