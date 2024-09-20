@@ -31,7 +31,9 @@ import pdfGeneratorRouter from './Routes/PdfGeneratorRoute.js';
 dotenv.config();
 const app = express();
 
-const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:8080'];
+const allowedOrigins = ['http://localhost:5173',
+   'http://localhost:5174', 
+   'http://localhost:8080','https://inaf-vente.netlify.app',];
 
 // Configuration de CORS
 app.use(cors({
