@@ -12,6 +12,8 @@ import mvtRoute from './Routes/mvtRoute.js';
 import ProduitRoute from './Routes/ProduitRoute.js';
 import PointeVenteRoute from './Routes/PointVenteRoute.js'
 import seuilRoute from './Routes/SeuilRoute.js'
+import path from 'path'; // path fonctionne avec ES6 aussi
+import { fileURLToPath } from 'url'
 
 import cors from 'cors'
 import userRoute from './Routes/UserRoute.js';
@@ -24,6 +26,7 @@ import variationRouter from './Routes/stockVariationRoute.js';
 import bonEntreRouter from './Routes/bonEntreRoute.js';
 import stockLocalRouter from './Routes/stockLocalRoute.js';
 import pdfGeneratorRouter from './Routes/PdfGeneratorRoute.js';
+import GeneralRouter from './Routes/generalRouter.js';
 
 
 
@@ -58,22 +61,14 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(cookieParser());
 
+// Trouver le chemin du fichier courant en ES6
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Servir les fichiers statiques du dossier 'uploads'
+app.use('/api/ffggaass/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
-  // Configuration de CORS
-// app.use(cors({
-//     origin: (origin, callback) => {
-//       // Autoriser les requêtes sans origin (comme les clients Postman)
-//       if (!origin) return callback(null, true);
-//       if (allowedOrigins.includes(origin)) {
-//         return callback(null, true);
-//       } else {
-//         return callback(new Error('Not allowed by CORS'));
-//       }
-//     },
-//     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-//     credentials: true, // Si vous utilisez des cookies d'authentification
-//   }));
 
 //routes
 app.use('/api/ffggaass/auth',authRoute)
@@ -92,6 +87,7 @@ app.use('/api/ffggaass/stockVariations',variationRouter)
 app.use('/api/ffggaass/bonEntre',bonEntreRouter)
 app.use('/api/ffggaass/stockLocal',stockLocalRouter)
 app.use('/api/ffggaass/print',pdfGeneratorRouter)
+app.use('/api/ffggaass/generale',GeneralRouter)
 
 
 
