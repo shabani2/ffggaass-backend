@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - name: Pull image from Docker Hub
-        run: docker pull ${{ secrets.DOCKER_USERNAME }}/ffggaass-backend:latest
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Run Docker container
         run: |
