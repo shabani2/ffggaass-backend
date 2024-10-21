@@ -31,10 +31,7 @@ jobs:
     steps:
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.8
-        with:
-        #   host: ${{ secrets.EC2_HOST }}
-        #   username: ubuntu
-        #   key: ${{ secrets.EC2_PRIVATE_KEY }}
+        with:       
           script: |
             docker pull ${{ secrets.DOCKER_USERNAME }}/ffggaass-backend:latest
             docker stop ffggaass-backend || true
