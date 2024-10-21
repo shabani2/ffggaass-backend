@@ -1,5 +1,17 @@
-FROM node:alpine3.20
-WORKDIR /WORKDIR
+# Utiliser une image Node.js légère
+FROM node:alpine3.17
+
+# Définir le répertoire de travail
+WORKDIR /app
+
+# Copier le contenu du projet
 COPY . .
+
+# Installer les dépendances
+RUN npm install
+
+# Exposer le port utilisé par votre API
 EXPOSE 9091
-CMD [ "npm","run","start" ]
+
+# Commande pour démarrer l’application
+CMD ["npm", "run", "start"]
