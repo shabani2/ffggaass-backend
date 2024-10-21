@@ -27,11 +27,13 @@ jobs:
   deploy:
     needs: build
     runs-on: self-hosted
-    
+
     steps:
       - name: Pull image from Docker Hub
         run: docker pull ${{ secrets.DOCKER_USERNAME }}/ffggaass-backend:latest
 
       - name: Run Docker container
-       run: docker run -d --name ffggaass-backend -p 9091:9091 \ -e MONGODB_URL_ONLINE="${{ secrets.MONGODB_URL_ONLINE }}" \ ${{ secrets.DOCKER_USERNAME }}/ffggaass-backend:latest
-
+        run: |
+          docker run -d --name ffggaass-backend -p 9091:9091 \
+          -e MONGODB_URL_ONLINE="${{ secrets.MONGODB_URL_ONLINE }}" \
+          ${{ secrets.DOCKER_USERNAME }}/ffggaass-backend:latest
