@@ -41,8 +41,8 @@ dotenv.config();
  export const dbConnection = async () => {
  try {
    console.info('con zone')
-   console.log('connection var = '+ process.env.MONGODB_URL_ONLINE);
-    await mongoose.connect(process.env.MONGODB_URL_ONLINE)
+   console.log('connection var = '+ secrets.MONGODB_URL_ONLINE);
+    await mongoose.connect(secrets.MONGODB_URL_ONLINE)
     console.log('connection establish successfully')
     
  } catch (error) {
