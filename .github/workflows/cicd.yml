@@ -26,14 +26,11 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
-
+    runs-on: self-hosted
+    
     steps:
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v0.1.8
-        with:       
-          script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/ffggaass-backend:latest
-            docker stop ffggaass-backend || true
-            docker rm ffggaass-backend || true
-            docker run -d --name ffggaass-backend -p 9091:9091 ~e MONGODB_URL_ONLINE=${{ secrets.MONGODB_URL_ONLINE }}/ffggaass-backend:latest
+      - name: Pull image from Docker Hub
+        run: docker pull ${{ secrets.DOCKER_USERNAME }}/ffggaass-backend:latest
+
+      - name: Run Docker container
+        run: docker run -d --name ffggaass-backend -p 9091:9091 -e MONGO_URI=${{ secrets.MONGODB_URL_ONLINE }} ${{ secrets.DOCKER_USERNAME }}/ffggaass-backend:latest
