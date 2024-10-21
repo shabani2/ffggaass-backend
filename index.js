@@ -55,6 +55,8 @@ app.use(cors({
 
 
 dbConnection();
+
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
