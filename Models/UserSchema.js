@@ -2,6 +2,7 @@
 
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
+//import bcryptjs from 'bcryptjs'
 import PointVente from './PointVenteSchema.js';
 
 const userSchema = new mongoose.Schema({
