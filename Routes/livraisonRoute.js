@@ -1,7 +1,130 @@
 import express from 'express';
-import Livraison from '../Models/LivraisonSchema.js'; // Assurez-vous que le chemin est correct
+import Livraison from '../Models/LivraisonSchema.js';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import xlsx from 'xlsx';
+import multer from 'multer'; // Assurez-vous que le chemin est correct
+import Produit from '../Models/ProduitSchema.js';
+import PointVente from '../Models/PointVenteSchema.js';
+import asyncHandler from 'express-async-handler';
 
 const livraisonRouter = express.Router();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Configuration de multer pour l'upload de fichiers (même si on l'utilise pour l'import)
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  }
+});
+const upload = multer({ storage: storage });
+
+// Route pour exporter les livraisons
+livraisonRouter.get('/export', asyncHandler(async (req, res) => {
+  const { format } = req.query; // format peut être 'csv' ou 'xlsx'
+
+  const livraisons = await Livraison.find({})
+    .populate('produit', 'nom')
+    .populate('pointVente', 'nom emplacement');
+
+  const data = livraisons.map(livraison => ({
+    quantite: livraison.quantite,
+    montant: livraison.montant,
+    statut: livraison.statut,
+    produitNom: livraison.produit.nom,
+    pointVenteNom: livraison.pointVente.nom,
+    // pointVenteEmplacement: livraison.pointVente.emplacement, // Ajouter emplacement du point de vente
+  }));
+
+  if (format === 'xlsx') {
+    // Générer le fichier XLSX dans un buffer
+    const worksheet = xlsx.utils.json_to_sheet(data);
+    const workbook = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'Livraisons');
+    
+    const buffer = xlsx.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+
+    // Définir les en-têtes pour un fichier XLSX
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=livraisons.xlsx');
+    res.send(buffer);
+  } else if (format === 'csv') {
+    // Générer le fichier CSV
+    const csv = data.map(row => Object.values(row).join(',')).join('\n');
+    const header = Object.keys(data[0]).join(',');
+    const filePath = path.join(__dirname, 'export', 'livraisons.csv');
+    
+    fs.writeFileSync(filePath, `${header}\n${csv}`);
+    res.download(filePath, (err) => {
+      if (err) {
+        res.status(500).send('Erreur lors du téléchargement du fichier');
+      }
+      fs.unlinkSync(filePath); // Supprimer le fichier après téléchargement
+    });
+  } else {
+    return res.status(400).send('Format invalide');
+  }
+}));
+
+// Fonctions utilitaires pour l'exportation
+const exportToCSV = (data, filePath) => {
+  const csv = data.map(row => Object.values(row).join(',')).join('\n');
+  const header = Object.keys(data[0]).join(',');
+  fs.writeFileSync(filePath, `${header}\n${csv}`);
+};
+
+const exportToExcel = (data, filePath) => {
+  const worksheet = xlsx.utils.json_to_sheet(data);
+  const workbook = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(workbook, worksheet, 'Livraisons');
+  xlsx.writeFile(workbook, filePath);
+};
+
+
+livraisonRouter.post('/import', upload.single('file'), asyncHandler(async (req, res) => {
+  try {
+    const filePath = req.file.path;
+
+    // Lire le fichier Excel
+    const workbook = xlsx.readFile(filePath);
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(worksheet);
+
+    // Insérer les données dans la table Livraison
+    const importedData = [];
+    for (const record of data) {
+      const produit = await Produit.findOne({ nom: record.produitNom });
+      const pointVente = await PointVente.findOne({ nom: record.pointVenteNom });
+
+      if (produit && pointVente) {
+        const newLivraison = new Livraison({
+          quantite: record.quantite,
+          montant: record.montant,
+          statut: record.statut || 'unvalidate', // Si statut est manquant, il sera défini sur 'unvalidate'
+          produit: produit._id,
+          pointVente: pointVente._id,
+        });
+        const savedLivraison = await newLivraison.save();
+        importedData.push(savedLivraison);
+      }
+    }
+
+    // Supprimer le fichier uploadé après traitement
+    fs.unlinkSync(filePath);
+
+    res.status(200).json(importedData);
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur lors du traitement du fichier', error: error.message });
+  }
+}));
+
+
 
 // Créer une nouvelle livraison
 livraisonRouter.post('/', async (req, res) => {

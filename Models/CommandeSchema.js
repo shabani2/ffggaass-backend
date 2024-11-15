@@ -33,6 +33,7 @@ const commandeSchema = new Schema(
   { timestamps: true }
 );
 
+
 // Création du modèle pour MvtStock
 const commande = mongoose.model('Commande', commandeSchema);
 

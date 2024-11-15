@@ -1,7 +1,124 @@
 import express from 'express';
 import Vente from '../Models/VenteSchema.js'; // Assurez-vous que le chemin est correct
+import asyncHandler from 'express-async-handler';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import xlsx from 'xlsx';
+import multer from 'multer';
+import Produit from '../Models/ProduitSchema.js';
+import PointVente from '../Models/PointVenteSchema.js';
 
 const venteRouter = express.Router();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Configuration de multer pour l'upload de fichiers
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    cb(null, file.originalname);
+  }
+});
+const upload = multer({ storage: storage });
+
+// Route pour exporter les ventes
+venteRouter.get('/export', asyncHandler(async (req, res) => {
+  const { format } = req.query; // format peut être 'csv' ou 'xlsx'
+
+  // Récupérer les données de vente avec les informations liées
+  const ventes = await Vente.find({})
+    .populate('produit', 'nom')
+    .populate('pointVente', 'nom emplacement');
+
+  // Transformer les données en un format plus lisible pour l'export
+  const data = ventes.map(vente => ({
+    quantite: vente.quantite,
+    montant: vente.montant,
+    produitNom: vente.produit.nom,
+    pointVenteNom: vente.pointVente.nom,
+    // pointVenteEmplacement: vente.pointVente.emplacement,
+  }));
+
+  // Créer un répertoire d'export s'il n'existe pas
+  const exportDir = path.join(__dirname, 'export');
+  if (!fs.existsSync(exportDir)) {
+    fs.mkdirSync(exportDir);
+  }
+
+  const filePath = path.join(exportDir, `ventes.${format}`);
+
+  if (format === 'csv') {
+    exportToCSV(data, filePath);
+  } else if (format === 'xlsx') {
+    exportToExcel(data, filePath);
+  } else {
+    return res.status(400).send('Format invalide');
+  }
+
+  res.download(filePath, (err) => {
+    if (err) {
+      res.status(500).send('Erreur lors du téléchargement du fichier');
+    }
+    fs.unlinkSync(filePath); // Supprime le fichier après téléchargement
+  });
+}));
+
+// Fonctions utilitaires pour l'exportation
+const exportToCSV = (data, filePath) => {
+  const csv = data.map(row => Object.values(row).join(',')).join('\n');
+  const header = Object.keys(data[0]).join(',');
+  fs.writeFileSync(filePath, `${header}\n${csv}`);
+};
+
+const exportToExcel = (data, filePath) => {
+  const worksheet = xlsx.utils.json_to_sheet(data);
+  const workbook = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(workbook, worksheet, 'Ventes');
+  xlsx.writeFile(workbook, filePath);
+};
+
+// Route pour importer les ventes
+venteRouter.post('/import', upload.single('file'), asyncHandler(async (req, res) => {
+  try {
+    const filePath = req.file.path;
+
+    // Lire le fichier Excel
+    const workbook = xlsx.readFile(filePath);
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = xlsx.utils.sheet_to_json(worksheet);
+
+    const importedData = [];
+
+    for (const record of data) {
+      const produit = await Produit.findOne({ nom: record.produitNom });
+      const pointVente = await PointVente.findOne({ nom: record.pointVenteNom });
+
+      if (produit && pointVente) {
+        const newVente = new Vente({
+          quantite: record.quantite,
+          montant: record.montant,
+          produit: produit._id,
+          pointVente: pointVente._id,
+        });
+
+        const savedVente = await newVente.save();
+        importedData.push(savedVente);
+      }
+    }
+
+    // Supprimer le fichier uploadé après traitement
+    fs.unlinkSync(filePath);
+
+    res.status(200).json(importedData);
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur lors du traitement du fichier', error: error.message });
+  }
+}));
 
 // Créer une nouvelle vente
 venteRouter.post('/', async (req, res) => {

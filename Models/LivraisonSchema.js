@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import StockVariation from './stockVariationSchema.js';
 import StockLocal from './stockLocalSchema.js'
 
+
 const { Schema } = mongoose;
 
 // Définition du schéma pour MvtStock
