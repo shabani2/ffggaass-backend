@@ -1,7 +1,7 @@
 // src/models/userModel.js
 
 import mongoose from 'mongoose';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import PointVente from './PointVenteSchema.js';
 
 const userSchema = new mongoose.Schema({
